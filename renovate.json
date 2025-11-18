@@ -1,23 +1,26 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": ["config:recommended"],
   "timezone": "UTC",
 
-  "docker": {
-    "enabled": true,
-    "pinDigests": false
-  },
+  "packageRules": [
+    {
+      "matchCategories": ["docker"],
+      "enabled": true,
+      "pinDigests": false
+    }
+  ],
 
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Update *_VERSION args/envs in Dockerfiles based on # renovate: comments",
-      "managerFilePatterns": [
-        "/(^|/|\\.)Dockerfile$/",
-        "/(^|/)Dockerfile\\.[^/]*$/"
+      "description": "Update *_VERSION args in Dockerfiles based on # renovate: comments on previous line (quoted or unquoted)",
+      "fileMatch": [
+        "(^|/|\\.)Dockerfile$",
+        "(^|/)Dockerfile\\.[^/]*$"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?( extractVersion=(?<extractVersion>.*?))?\\s*(?:ENV|ARG) .*?_VERSION=(?<currentValue>.*)\\s"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\nARG\\s+(?<argName>[A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*\"?((?<currentValue>[^\"\\s]+))\"?"
       ],
       "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
     }

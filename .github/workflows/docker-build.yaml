@@ -171,27 +171,151 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for multi-platform)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
+      - name: Compute version-based tags for ${{ matrix.name }}
+        id: tmpl
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          svc_dir="${{ matrix.dir }}"
+          cfg_file="${svc_dir}/service.json"
+          dockerfile="${{ matrix.dockerfile }}"
+          
+          echo "Service dir: $svc_dir"
+          echo "Config file: $cfg_file"
+          echo "Dockerfile:  $dockerfile"
+          
+          if [ ! -f "$cfg_file" ]; then
+            echo "No service.json found at $cfg_file, no extra tags."
+            echo "extra_tags=" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Read versionArgs and tagTemplates from service.json
+          version_args_json="$(jq -c '.versionArgs // []' "$cfg_file")"
+          tag_templates_json="$(jq -c '.tagTemplates // []' "$cfg_file")"
+          
+          echo "versionArgs: $version_args_json"
+          echo "tagTemplates: $tag_templates_json"
+          
+          mapfile -t version_args < <(echo "$version_args_json" | jq -r '.[]')
+          mapfile -t templates < <(echo "$tag_templates_json" | jq -r '.[]')
+          
+          if [ ${#templates[@]} -eq 0 ]; then
+            echo "No tagTemplates defined; no extra tags."
+            echo "extra_tags=" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Helper: extract ARG value from Dockerfile (handles quoted/unquoted)
+          extract_arg() {
+            local arg_name="$1"
+            awk -v arg="$arg_name" '
+              $1 == "ARG" {
+                # Reconstruct everything after "ARG"
+                line = substr($0, index($0, "ARG") + 3)
+                gsub(/^[ \t]+/, "", line)    # trim leading spaces
+          
+                # Split on "=" into name and value
+                n = split(line, parts, "=")
+                if (n < 2) next
+          
+                # parts[1] should be the arg name (maybe with spaces)
+                name = parts[1]
+                gsub(/[ \t]/, "", name)
+                if (name != arg) next
+          
+                # parts[2] and beyond: value + comments
+                value = parts[2]
+                # Remove leading spaces
+                gsub(/^[ \t]+/, "", value)
+                # Drop trailing comment
+                sub(/[ \t]+#.*/, "", value)
+                # Drop trailing spaces
+                gsub(/[ \t]+$/, "", value)
+                # Strip surrounding quotes
+                gsub(/^"/, "", value)
+                gsub(/"$/, "", value)
+          
+                print value
+                exit
+              }
+            ' "$dockerfile"
+          }
+          
+          # Extract ARG values
+          declare -A values
+          
+          for arg in "${version_args[@]}"; do
+            value="$(extract_arg "$arg" || true)"
+            if [ -z "$value" ]; then
+              echo "Warning: ARG $arg not found or has no value in $dockerfile" >&2
+            else
+              echo "Found $arg=$value"
+              values["$arg"]="$value"
+            fi
+          done
+          
+          extra_tags=()
+          
+          # Render templates: replace {ARG_NAME} with value
+          for tmpl_str in "${templates[@]}"; do
+            rendered="$tmpl_str"
+          
+            for arg in "${version_args[@]}"; do
+              val="${values[$arg]:-}"
+              placeholder="{$arg}"
+              if [ -n "$val" ]; then
+                rendered="${rendered//$placeholder/$val}"
+              fi
+            done
+          
+            # If unresolved placeholders remain, skip this template
+            if [[ "$rendered" == *"{"*"}"* ]]; then
+              echo "Skipping template '$tmpl_str' -> '$rendered' (unresolved placeholders)" >&2
+              continue
+            fi
+          
+            extra_tags+=("$rendered")
+          done
+          
+          if [ ${#extra_tags[@]} -eq 0 ]; then
+            echo "No valid extra tags rendered."
+            echo "extra_tags=" >>"$GITHUB_OUTPUT"
+          else
+            echo "Extra tags:"
+            printf '  %s\n' "${extra_tags[@]}"
+          
+            {
+              echo "extra_tags<<EOF"
+              printf '%s\n' "${extra_tags[@]}"
+              echo "EOF"
+            } >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract metadata (base tags & labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.name }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            # Always sha tag
             type=sha
+            # latest only on main (optional; adjust as you like)
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push ${{ matrix.name }}
         uses: docker/build-push-action@v6
@@ -200,5 +324,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: ${{ matrix.platforms }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.tmpl.outputs.extra_tags }}
           labels: ${{ steps.meta.outputs.labels }}

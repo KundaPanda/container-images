@@ -18,7 +18,10 @@ RUN mkdir neo && \
         | xargs -I {} curl -L -O {} && \
     sha256sum -c *.sum
 
-FROM ghcr.io/jellyfin/jellyfin:10.11.2
+# renovate: datasource=github-releases depName=jellyfin/jellyfin
+ARG JELLYFIN_VERSION=10.11.2
+
+FROM ghcr.io/jellyfin/jellyfin:${JELLYFIN_VERSION}
 
 ARG UID=10001
 ARG GID=10001
