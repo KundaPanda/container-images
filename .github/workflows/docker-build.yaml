@@ -53,7 +53,13 @@ jobs:
                         ($dir + "/Dockerfile")
                       end
                     ),
-                    platforms: ($cfg.platforms // ["linux/amd64"])
+                    platforms: (
+                      if ($cfg.platforms? // null) then
+                        ($cfg.platforms | join(","))
+                      else
+                        "linux/amd64"
+                      end
+                    )
                   }
                 ' "$cfg"
             )"
