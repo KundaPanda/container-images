@@ -2,7 +2,7 @@
   "platforms": ["linux/amd64"],
   "versionArgs": ["JELLYFIN_VERSION", "COMPUTE_RUNTIME_VERSION"],
   "tagTemplates": [
-    "jellyfin-{JELLYFIN_VERSION}",
-    "jellyfin-{JELLYFIN_VERSION}-cr-{COMPUTE_RUNTIME_VERSION}"
+    "{JELLYFIN_VERSION}",
+    "{JELLYFIN_VERSION}-cr-{COMPUTE_RUNTIME_VERSION}"
   ]
 }

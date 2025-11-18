@@ -4,10 +4,11 @@ ARG JELLYFIN_VERSION=10.11.2
 ARG COMPILER_VERSION=2.20.3
 # renovate: datasource=github-releases depName=intel/compute-runtime
 ARG COMPUTE_RUNTIME_VERSION=25.40.35563.4
-ARG TARGETARCH
 
 
 FROM badouralix/curl-jq AS packages
+
+ARG TARGETARCH
 
 WORKDIR /tmp
 

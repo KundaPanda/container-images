@@ -195,10 +195,12 @@ jobs:
           svc_dir="${{ matrix.dir }}"
           cfg_file="${svc_dir}/service.json"
           dockerfile="${{ matrix.dockerfile }}"
+          image="${REGISTRY}/${IMAGE_PREFIX}-${{ matrix.name }}"
           
           echo "Service dir: $svc_dir"
           echo "Config file: $cfg_file"
           echo "Dockerfile:  $dockerfile"
+          echo "Base image for tags: $image"
           
           if [ ! -f "$cfg_file" ]; then
             echo "No service.json found at $cfg_file, no extra tags."
@@ -229,28 +231,22 @@ jobs:
               $1 == "ARG" {
                 # Reconstruct everything after "ARG"
                 line = substr($0, index($0, "ARG") + 3)
-                gsub(/^[ \t]+/, "", line)    # trim leading spaces
+                gsub(/^[ \t]+/, "", line)
           
                 # Split on "=" into name and value
                 n = split(line, parts, "=")
                 if (n < 2) next
           
-                # parts[1] should be the arg name (maybe with spaces)
                 name = parts[1]
                 gsub(/[ \t]/, "", name)
                 if (name != arg) next
           
-                # parts[2] and beyond: value + comments
                 value = parts[2]
-                # Remove leading spaces
-                gsub(/^[ \t]+/, "", value)
-                # Drop trailing comment
-                sub(/[ \t]+#.*/, "", value)
-                # Drop trailing spaces
-                gsub(/[ \t]+$/, "", value)
-                # Strip surrounding quotes
-                gsub(/^"/, "", value)
-                gsub(/"$/, "", value)
+                gsub(/^[ \t]+/, "", value)   # leading spaces
+                sub(/[ \t]+#.*/, "", value)  # trailing comment
+                gsub(/[ \t]+$/, "", value)   # trailing spaces
+                gsub(/^"/, "", value)        # strip leading quote
+                gsub(/"$/, "", value)        # strip trailing quote
           
                 print value
                 exit
@@ -275,30 +271,31 @@ jobs:
           
           # Render templates: replace {ARG_NAME} with value
           for tmpl_str in "${templates[@]}"; do
-            rendered="$tmpl_str"
+            rendered_tag="$tmpl_str"
           
             for arg in "${version_args[@]}"; do
               val="${values[$arg]:-}"
               placeholder="{$arg}"
               if [ -n "$val" ]; then
-                rendered="${rendered//$placeholder/$val}"
-              fi
+                rendered_tag="${rendered_tag//$placeholder/$val}"
+              }
             done
           
             # If unresolved placeholders remain, skip this template
-            if [[ "$rendered" == *"{"*"}"* ]]; then
-              echo "Skipping template '$tmpl_str' -> '$rendered' (unresolved placeholders)" >&2
+            if [[ "$rendered_tag" == *"{"*"}"* ]]; then
+              echo "Skipping template '$tmpl_str' -> '$rendered_tag' (unresolved placeholders)" >&2
               continue
             fi
           
-            extra_tags+=("$rendered")
+            # Turn tag value into a full image reference
+            extra_tags+=("$image:$rendered_tag")
           done
           
           if [ ${#extra_tags[@]} -eq 0 ]; then
             echo "No valid extra tags rendered."
             echo "extra_tags=" >>"$GITHUB_OUTPUT"
           else
-            echo "Extra tags:"
+            echo "Extra image references:"
             printf '  %s\n' "${extra_tags[@]}"
           
             {
