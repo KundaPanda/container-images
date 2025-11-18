@@ -195,7 +195,8 @@ jobs:
           svc_dir="${{ matrix.dir }}"
           cfg_file="${svc_dir}/service.json"
           dockerfile="${{ matrix.dockerfile }}"
-          image="${REGISTRY}/${IMAGE_PREFIX}-${{ matrix.name }}"
+          raw_image="${REGISTRY}/${IMAGE_PREFIX}-${{ matrix.name }}"
+          image="$(echo "$raw_image" | tr '[:upper:]' '[:lower:]')"
           
           echo "Service dir: $svc_dir"
           echo "Config file: $cfg_file"
