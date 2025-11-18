@@ -1,13 +1,13 @@
 # renovate: datasource=github-releases depName=jellyfin/jellyfin
 ARG JELLYFIN_VERSION=10.11.2
-# renovate: datasource=github-releases depName=intel/intel-graphics-compiler
-ARG COMPILER_VERSION=2.20.3
-# renovate: datasource=github-releases depName=intel/compute-runtime
-ARG COMPUTE_RUNTIME_VERSION=25.40.35563.4
 
 
 FROM badouralix/curl-jq AS packages
 
+# renovate: datasource=github-releases depName=intel/intel-graphics-compiler
+ARG COMPILER_VERSION=2.20.3
+# renovate: datasource=github-releases depName=intel/compute-runtime
+ARG COMPUTE_RUNTIME_VERSION=25.40.35563.4
 ARG TARGETARCH
 
 WORKDIR /tmp
