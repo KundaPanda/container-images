@@ -278,7 +278,7 @@ jobs:
               placeholder="{$arg}"
               if [ -n "$val" ]; then
                 rendered_tag="${rendered_tag//$placeholder/$val}"
-              }
+              fi
             done
           
             # If unresolved placeholders remain, skip this template
