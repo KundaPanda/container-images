@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -323,7 +325,7 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           platforms: ${{ matrix.platforms }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ steps.tmpl.outputs.extra_tags }}
