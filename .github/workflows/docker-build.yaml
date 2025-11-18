@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.build-matrix.outputs.matrix }}
+      has-work: ${{ steps.build-matrix.outputs.has_work }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,142 +26,17 @@ jobs:
           fetch-depth: 0
 
       - id: build-matrix
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "### Collecting services from */service.json"
-
-          services_json="[]"
-
-          shopt -s nullglob
-          for cfg in */service.json; do
-            dir="$(dirname "$cfg")"      # e.g. "jellyfin"
-            name="$(basename "$dir")"    # e.g. "jellyfin"
-
-            svc="$(
-              jq -c \
-                --arg name "$name" \
-                --arg dir "$dir" \
-                '
-                . as $cfg
-                | {
-                    name: $name,
-                    dir: $dir,
-                    context: ($cfg.context // $dir),
-                    dockerfile: (
-                      if ($cfg.dockerfile? // null) then
-                        ($dir + "/" + $cfg.dockerfile)
-                      else
-                        ($dir + "/Dockerfile")
-                      end
-                    ),
-                    platforms: (
-                      if ($cfg.platforms? // null) then
-                        ($cfg.platforms | join(","))
-                      else
-                        "linux/amd64"
-                      end
-                    )
-                  }
-                ' "$cfg"
-            )"
-
-            services_json="$(
-              jq -c --argjson svc "$svc" '. + [$svc]' <<<"$services_json"
-            )"
-          done
-          shopt -u nullglob
-
-          if [ "$services_json" = "[]" ]; then
-            echo "No services (no */service.json) found."
-            echo 'matrix={"include":[]}' >>"$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "All services:"
-          echo "$services_json" | jq
-
-          echo "### Determining base for diff"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base="${{ github.event.pull_request.base.sha }}"
-          else
-            base="${{ github.event.before }}"
-          fi
-
-          echo "Base SHA: ${base:-<none>}"
-
-          echo "### Computing changed top-level dirs"
-          if [ -z "${base}" ]; then
-            echo "No base SHA, treating all files as changed."
-            changed_dirs="$(
-              git ls-files | cut -d/ -f1 | sort -u
-            )"
-          else
-            git fetch origin "${base}" --depth=1 || true
-            changed_dirs="$(
-              git diff --name-only "${base}"...HEAD \
-                | cut -d/ -f1 \
-                | sort -u \
-                || true
-            )"
-          fi
-
-          echo "Changed top-level dirs:"
-          printf '%s\n' ${changed_dirs:-"(none)"}
-
-          # Turn changed_dirs into a bash array
-          changed_dirs_arr=()
-          if [ -n "${changed_dirs:-}" ]; then
-            # shellcheck disable=SC2207
-            changed_dirs_arr=($(printf '%s\n' $changed_dirs))
-          fi
-
-          echo "Changed dirs array: ${changed_dirs_arr[*]:-"(empty)"}"
-
-          echo "### Filtering services in bash based on changed dirs"
-          selected_json="[]"
-
-          # Iterate over each service object
-          for svc in $(echo "$services_json" | jq -c '.[]'); do
-            name="$(echo "$svc" | jq -r '.name')"
-
-            matched=false
-            if [ ${#changed_dirs_arr[@]} -gt 0 ]; then
-              for d in "${changed_dirs_arr[@]}"; do
-                if [ "$d" = "$name" ]; then
-                  matched=true
-                  break
-                fi
-              done
-            fi
-
-            if [ "$matched" = true ]; then
-              echo "Service '$name' has changes."
-              selected_json="$(
-                jq -c --argjson svc "$svc" '. + [$svc]' <<<"$selected_json"
-              )"
-            fi
-          done
-
-          if [ "$selected_json" = "[]" ]; then
-            echo "No service-specific changes; building all services."
-            selected_json="$services_json"
-          fi
-
-          echo "Selected services:"
-          echo "$selected_json" | jq
-
-          matrix="{\"include\": $selected_json}"
-
-          echo "Final matrix:"
-          echo "$matrix" | jq
-
-          echo "matrix=$matrix" >>"$GITHUB_OUTPUT"
+        name: Generate build matrix
+        run: python3 .github/scripts/build_matrix.py
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          BEFORE_SHA: ${{ github.event.before || '' }}
 
   build-and-push:
     needs: generate-matrix
     runs-on: ubuntu-latest
+    if: ${{ needs.generate-matrix.outputs.has-work == 'true' }}
 
     strategy:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
@@ -188,123 +64,12 @@ jobs:
 
       - name: Compute version-based tags for ${{ matrix.name }}
         id: tmpl
-        shell: bash
         run: |
-          set -euo pipefail
-          
-          svc_dir="${{ matrix.dir }}"
-          cfg_file="${svc_dir}/service.json"
-          dockerfile="${{ matrix.dockerfile }}"
           raw_image="${REGISTRY}/${IMAGE_PREFIX}-${{ matrix.name }}"
-          image="$(echo "$raw_image" | tr '[:upper:]' '[:lower:]')"
-          
-          echo "Service dir: $svc_dir"
-          echo "Config file: $cfg_file"
-          echo "Dockerfile:  $dockerfile"
-          echo "Base image for tags: $image"
-          
-          if [ ! -f "$cfg_file" ]; then
-            echo "No service.json found at $cfg_file, no extra tags."
-            echo "extra_tags=" >>"$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # Read versionArgs and tagTemplates from service.json
-          version_args_json="$(jq -c '.versionArgs // []' "$cfg_file")"
-          tag_templates_json="$(jq -c '.tagTemplates // []' "$cfg_file")"
-          
-          echo "versionArgs: $version_args_json"
-          echo "tagTemplates: $tag_templates_json"
-          
-          mapfile -t version_args < <(echo "$version_args_json" | jq -r '.[]')
-          mapfile -t templates < <(echo "$tag_templates_json" | jq -r '.[]')
-          
-          if [ ${#templates[@]} -eq 0 ]; then
-            echo "No tagTemplates defined; no extra tags."
-            echo "extra_tags=" >>"$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # Helper: extract ARG value from Dockerfile (handles quoted/unquoted)
-          extract_arg() {
-            local arg_name="$1"
-            awk -v arg="$arg_name" '
-              $1 == "ARG" {
-                # Reconstruct everything after "ARG"
-                line = substr($0, index($0, "ARG") + 3)
-                gsub(/^[ \t]+/, "", line)
-          
-                # Split on "=" into name and value
-                n = split(line, parts, "=")
-                if (n < 2) next
-          
-                name = parts[1]
-                gsub(/[ \t]/, "", name)
-                if (name != arg) next
-          
-                value = parts[2]
-                gsub(/^[ \t]+/, "", value)   # leading spaces
-                sub(/[ \t]+#.*/, "", value)  # trailing comment
-                gsub(/[ \t]+$/, "", value)   # trailing spaces
-                gsub(/^"/, "", value)        # strip leading quote
-                gsub(/"$/, "", value)        # strip trailing quote
-          
-                print value
-                exit
-              }
-            ' "$dockerfile"
-          }
-          
-          # Extract ARG values
-          declare -A values
-          
-          for arg in "${version_args[@]}"; do
-            value="$(extract_arg "$arg" || true)"
-            if [ -z "$value" ]; then
-              echo "Warning: ARG $arg not found or has no value in $dockerfile" >&2
-            else
-              echo "Found $arg=$value"
-              values["$arg"]="$value"
-            fi
-          done
-          
-          extra_tags=()
-          
-          # Render templates: replace {ARG_NAME} with value
-          for tmpl_str in "${templates[@]}"; do
-            rendered_tag="$tmpl_str"
-          
-            for arg in "${version_args[@]}"; do
-              val="${values[$arg]:-}"
-              placeholder="{$arg}"
-              if [ -n "$val" ]; then
-                rendered_tag="${rendered_tag//$placeholder/$val}"
-              fi
-            done
-          
-            # If unresolved placeholders remain, skip this template
-            if [[ "$rendered_tag" == *"{"*"}"* ]]; then
-              echo "Skipping template '$tmpl_str' -> '$rendered_tag' (unresolved placeholders)" >&2
-              continue
-            fi
-          
-            # Turn tag value into a full image reference
-            extra_tags+=("$image:$rendered_tag")
-          done
-          
-          if [ ${#extra_tags[@]} -eq 0 ]; then
-            echo "No valid extra tags rendered."
-            echo "extra_tags=" >>"$GITHUB_OUTPUT"
-          else
-            echo "Extra image references:"
-            printf '  %s\n' "${extra_tags[@]}"
-          
-            {
-              echo "extra_tags<<EOF"
-              printf '%s\n' "${extra_tags[@]}"
-              echo "EOF"
-            } >>"$GITHUB_OUTPUT"
-          fi
+          python3 .github/scripts/render_extra_tags.py \
+            --service-dir "${{ matrix.dir }}" \
+            --dockerfile "${{ matrix.dockerfile }}" \
+            --image "$(echo "$raw_image" | tr '[:upper:]' '[:lower:]')"
 
       - name: Extract metadata (base tags & labels)
         id: meta
