@@ -2,6 +2,8 @@
 
 Jellyfin build with non-root user for Intel GPUs on amd64.
 
+Includes Intel Compute Runtime and Intel Graphics Compiler for OpenCL.
+
 ---
 
 ## Image
@@ -10,7 +12,7 @@ Tags (actual set depends on CI configuration):
 
 - `latest` – latest successful build from the `main` branch
 - `<JELLYFIN_VERSION>` – Based on Jellyfin version only
-- `<JELLYFIN_VERSION>-cr-<COMPUTE_RUNTIME_VERSION>` – Jellyfin + Intel Compute Runtime version
+- `<JELLYFIN_VERSION>-intel-<COMPUTE_RUNTIME_VERSION>` – Jellyfin + Intel Compute Runtime version
 
 ---
 
