@@ -36,4 +36,6 @@ RUN groupadd -g $GID jellyfin && \
 
 RUN dpkg -i neo/*.deb && rm -rf neo
 
+WORKDIR /jellyfin
+
 USER jellyfin
