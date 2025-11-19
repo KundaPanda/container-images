@@ -1,5 +1,5 @@
 # renovate: datasource=github-releases depName=jellyfin/jellyfin
-ARG JELLYFIN_VERSION=10.11.2
+ARG JELLYFIN_VERSION=10.11.3
 # renovate: datasource=docker depName=debian versioning=debian
 ARG OS_VERSION=trixie
 
