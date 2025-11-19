@@ -18,6 +18,8 @@ import sys
 from typing import Dict, Iterable, List, Sequence, Set
 
 ZERO_SHA = "0" * 40
+# README-only updates should not trigger builds.
+IGNORED_TOP_LEVEL_ENTRIES = {"README", "README.md"}
 
 
 def log(msg: str) -> None:
@@ -38,15 +40,22 @@ def run_git(
     return proc
 
 
-def tracked_top_level_dirs() -> List[str]:
-    proc = run_git(["ls-files"])
+def load_dirs_from_stdout(stdout: str) -> List[str]:
     dirs: Set[str] = set()
-    for line in proc.stdout.splitlines():
+    for line in stdout.splitlines():
         if not line:
             continue
         parts = line.split("/", 1)
-        dirs.add(parts[0])
+        top = parts[0]
+        if top in IGNORED_TOP_LEVEL_ENTRIES:
+            continue
+        dirs.add(top)
     return sorted(dirs)
+
+
+def tracked_top_level_dirs() -> List[str]:
+    proc = run_git(["ls-files"])
+    return load_dirs_from_stdout(proc.stdout)
 
 
 def changed_top_level_dirs(base: str | None) -> List[str]:
@@ -65,13 +74,7 @@ def changed_top_level_dirs(base: str | None) -> List[str]:
         )
         return tracked_top_level_dirs()
 
-    dirs: Set[str] = set()
-    for line in diff.stdout.splitlines():
-        if not line:
-            continue
-        parts = line.split("/", 1)
-        dirs.add(parts[0])
-    return sorted(dirs)
+    return load_dirs_from_stdout(diff.stdout)
 
 
 def load_services() -> List[Dict[str, str]]:
