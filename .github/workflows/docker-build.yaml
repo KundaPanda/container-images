@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
+  IMAGE_PREFIX: "${{ github.repository_owner }}/"
 
 jobs:
   generate-matrix:
@@ -65,7 +65,7 @@ jobs:
       - name: Compute version-based tags for ${{ matrix.name }}
         id: tmpl
         run: |
-          raw_image="${REGISTRY}/${IMAGE_PREFIX}-${{ matrix.name }}"
+          raw_image="${REGISTRY}/${IMAGE_PREFIX}/${{ matrix.name }}"
           python3 .github/scripts/render_extra_tags.py \
             --service-dir "${{ matrix.dir }}" \
             --dockerfile "${{ matrix.dockerfile }}" \
@@ -75,7 +75,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.name }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}
           tags: |
             # Always sha tag
             type=sha
