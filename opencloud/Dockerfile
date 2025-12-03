@@ -46,7 +46,7 @@ ENV OC_EXTENSION_UNZIP=https://github.com/opencloud-eu/web-extensions/releases/d
 
 RUN /var/lib/scripts/load-extensions.sh "$EXTENSIONS_DIR"
 
-VOLUME [ "/var/lib/opencloud", "/etc/opencloud", "/etc/opencloud-configs" ]
+VOLUME [ "/var/lib/opencloud", "/etc/opencloud-configs" ]
 ENTRYPOINT [ "/bin/sh" ]
 CMD [ "/var/lib/scripts/entrypoint.sh" ]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
