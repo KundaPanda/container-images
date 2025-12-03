@@ -47,11 +47,10 @@ Exposed ports inside the container:
 
 Paths inside the container that are intended for persistent or external data:
 
-| Path in container        | Contents / purpose                     | Notes                                                                                |
-|--------------------------|----------------------------------------|--------------------------------------------------------------------------------------|
-| `/var/lib/opencloud`     | All stored data                        |                                                                                      |
-| `/etc/opencloud`         | Dynamically populated config directory | Should be an emptyDir, configurations are copied from opencloud-configs              |
-| `/etc/opencloud-configs` | Custom configuration                   | Any yaml configuration files are copied from here to /etc/opencloud for k8s purposes |
+| Path in container        | Contents / purpose   | Notes                                                                                |
+|--------------------------|----------------------|--------------------------------------------------------------------------------------|
+| `/var/lib/opencloud`     | All stored data      |                                                                                      |
+| `/etc/opencloud-configs` | Custom configuration | Any yaml configuration files are copied from here to /etc/opencloud for k8s purposes |
 
 ### User / permissions
 
