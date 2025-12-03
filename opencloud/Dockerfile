@@ -21,19 +21,19 @@ USER opencloud
 
 COPY --chmod=500 --chown=opencloud load-extensions.sh entrypoint.sh /var/lib/scripts/
 
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^unzip (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^unzip-v(?<version>\d+\.\d+\.\d+)$"
 ARG UNZIP_VERSION=1.0.2
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^arcade (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^arcade-v(?<version>\d+\.\d+\.\d+)$"
 ARG ARCADE_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^maps (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^maps-v(?<version>\d+\.\d+\.\d+)$"
 ARG MAPS_VERSION=1.0.1
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^progress-bars (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^progress-bars-v(?<version>\d+\.\d+\.\d+)$"
 ARG PROGRESS_BARS_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^json-viewer (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^json-viewer-v(?<version>\d+\.\d+\.\d+)$"
 ARG JSON_VIEWER_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^external-sites (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^external-sites-v(?<version>\d+\.\d+\.\d+)$"
 ARG EXTERNAL_SITES_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning="regex:^draw-io (?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$"
+# renovate: datasource=github-tags depName=opencloud-eu/web-extensions extractVersion="^draw-io-v(?<version>\d+\.\d+\.\d+)$"
 ARG DRAWIO_VERSION=1.0.0
 
 ENV OC_EXTENSION_UNZIP=https://github.com/opencloud-eu/web-extensions/releases/download/unzip-v${UNZIP_VERSION}/unzip-${UNZIP_VERSION}.zip \
