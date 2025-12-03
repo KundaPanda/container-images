@@ -21,19 +21,19 @@ USER opencloud
 
 COPY --chmod=500 --chown=opencloud load-extensions.sh entrypoint.sh /var/lib/scripts/
 
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^unzip (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^unzip (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG UNZIP_VERSION=1.0.2
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^arcade (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^arcade (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG ARCADE_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^maps (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^maps (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG MAPS_VERSION=1.0.1
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^progress-bars (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^progress-bars (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG PROGRESS_BARS_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^json-viewer (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^json-viewer (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG JSON_VIEWER_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^external-sites (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^external-sites (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG EXTERNAL_SITES_VERSION=1.0.0
-# renovate: datasource=github-releases depName=opencloud-eu/opencloud versioning=regex:^draw-io (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
+# renovate: datasource=github-releases depName=opencloud-eu/web-extensions versioning=regex:^draw-io (?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$
 ARG DRAWIO_VERSION=1.0.0
 
 ENV OC_EXTENSION_UNZIP=https://github.com/opencloud-eu/web-extensions/releases/download/unzip-v${UNZIP_VERSION}/unzip-${UNZIP_VERSION}.zip \
