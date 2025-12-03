@@ -9,7 +9,7 @@ else
   echo "Config exists, continuing";
 fi
 
-if [ -d /etc/opencloud-configs ] && ! find /etc/opencloud-configs/ -type d -empty; then
+if [ -d /etc/opencloud-configs ] && [ -z "$(find /etc/opencloud-configs/ -type d -empty)" ]; then
   echo "Copying opencloud config files";
   /bin/cp -aL /etc/opencloud-configs/* /etc/opencloud/;
 else
