@@ -13,7 +13,7 @@ fi
 
 if [ -d /etc/opencloud-configs ] && [ -z "$(find /etc/opencloud-configs/ -type d -empty)" ]; then
   echo "Copying opencloud config files";
-  /bin/cp -L /etc/opencloud-configs/*.yaml /etc/opencloud/;
+  /bin/cp -aL /etc/opencloud-configs/*.yaml /etc/opencloud/;
 else
   echo "Config directory /etc/opencloud-configs doesn't exist. Skipping config copy."
 fi
