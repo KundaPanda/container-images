@@ -1,5 +1,5 @@
 # renovate: datasource=github-releases depName=opencloud-eu/opencloud
-ARG OPENCLOUD_VERSION=4.1.0
+ARG OPENCLOUD_VERSION=5.0.0
 ARG TARGETARCH
 
 FROM --platform=linux/${TARGETARCH} opencloudeu/opencloud-rolling:${OPENCLOUD_VERSION}
