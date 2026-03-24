@@ -42,8 +42,9 @@ COPY --from=download /opt/ombi/ /app/ombi/
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-RUN mv /app/ombi/ClientApp/dist/index.html /app/ombi/index.html.template \
-    && ln -s /config/runtime/index.html /app/ombi/ClientApp/dist/index.html \
+RUN mkdir -p /app/ombi-dist-template \
+    && cp -R /app/ombi/ClientApp/dist/. /app/ombi-dist-template/ \
+    && chown -R ombi:ombi /app/ombi/ClientApp/dist \
     && chmod 755 /usr/local/bin/docker-entrypoint.sh
 
 WORKDIR /app/ombi
