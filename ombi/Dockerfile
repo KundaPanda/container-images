@@ -2,7 +2,7 @@
 ARG OMBI_VERSION=4.53.4
 ARG TARGETARCH
 
-FROM --platform=$BUILDPLATFORM ubuntu:noble@sha256:186072bba1b2f436cbb91ef2567abca677337cfc786c86e107d25b7072feef0c AS download
+FROM --platform=$BUILDPLATFORM ubuntu:noble@sha256:84e77dee7d1bc93fb029a45e3c6cb9d8aa4831ccfcc7103d36e876938d28895b AS download
 
 ARG OMBI_VERSION
 ARG TARGETARCH
@@ -23,7 +23,7 @@ RUN case "$TARGETARCH" in \
     && tar -xzf /tmp/ombi.tar.gz -C /opt/ombi \
     && rm /tmp/ombi.tar.gz
 
-FROM ubuntu:noble@sha256:186072bba1b2f436cbb91ef2567abca677337cfc786c86e107d25b7072feef0c
+FROM ubuntu:noble@sha256:84e77dee7d1bc93fb029a45e3c6cb9d8aa4831ccfcc7103d36e876938d28895b
 
 ARG UID=10001
 ARG GID=10001
