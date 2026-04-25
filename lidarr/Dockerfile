@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1@sha256:2780b5c3bab67f1f76c781860de469442999ed1a0d7992a5efdf2cffc0e3d769
 
-ARG DEBIAN_BASE=docker.io/library/debian:trixie-slim@sha256:4ffb3a1511099754cddc70eb1b12e50ffdb67619aa0ab6c13fcd800a78ef7c7a
+ARG DEBIAN_BASE=docker.io/library/debian:trixie-slim@sha256:cedb1ef40439206b673ee8b33a46a03a0c9fa90bf3732f54704f99cb061d2c5a
 
 FROM --platform=$BUILDPLATFORM ${DEBIAN_BASE} AS fetch
 
